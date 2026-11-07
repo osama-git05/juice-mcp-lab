@@ -1,0 +1,22 @@
+digraph G {
+  graph [rankdir=TB,bgcolor="white",pad="0.2",nodesep="0.3",ranksep="0.4",fontname="DejaVu Sans"];
+  node [shape=box,style="rounded,filled",fillcolor="#EDF3F7",color="#59788C",fontname="DejaVu Sans",fontsize=13,margin="0.16,0.12"];
+  edge [color="#456A80",fontname="DejaVu Sans",fontsize=10];
+  operator [label="Operator in Kali"];
+  runner [label="runner.py\nHTTP target check + model request"];
+  tunnel [label="SSH reverse tunnel\nKali loopback 8888"];
+  model [label="Windows host\nUnsloth / Qwen local inference"];
+  probe [label="tests.py\nFixed GET requests"];
+  target [label="Local Juice Shop\nRecorded target 10.0.2.15:3000"];
+  output [label="Terminal observations\nChecklist and HTTP status codes",fillcolor="#DDEDEB"];
+  summary [label="generate_report.py\nReviewed baseline catalogue"];
+  json [label="docs/report_summary.json\nHistorical evidence review"];
+  operator -> runner; operator -> probe; operator -> summary;
+  runner -> target [label="availability"];
+  runner -> tunnel -> model;
+  model -> output [label="checklist"];
+  probe -> target [label="ten URLs"];
+  target -> output [label="status"];
+  summary -> json;
+  {rank=same;runner;probe;summary;}
+}
