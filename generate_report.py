@@ -1,30 +1,50 @@
+"""Export reviewed historical probe observations, not a new scan verdict."""
 import json
-import os
+from pathlib import Path
+
+OBSERVATIONS = [
+    ("T01", "SQL injection login bypass", 500),
+    ("T02", "Search XSS", 200),
+    ("T03", "Basket access control", 401),
+    ("T04", "Backup file exposure", 403),
+    ("T05", "Administrative route access", 200),
+    ("T06", "API documentation exposure", 200),
+    ("T07", "Password reset weakness", 500),
+    ("T08", "Search input validation", 200),
+    ("T09", "Redirect handling", 406),
+    ("T10", "Mass assignment", 401),
+]
 
 report = {
-    "project": "OWASP Juice Shop MCP Automated Assessment",
-    "target": os.getenv("TARGET_URL", "http://10.0.2.15:3000"),
-    "runner_model": os.getenv("MODEL_NAME", "Qwen2.5-Coder-7B-Instruct"),
+    "project": "Local LLM Security Assessment Lab",
+    "provenance": {
+        "source": "Committed screenshot; manually reviewed baseline",
+        "evidence": "docs/screenshots/06-security-checks.png",
+        "reviewed_revision": "b892b45beb5e54215cec0eac2a2729e2a1552504",
+        "new_run_ingested": False,
+        "target_shown": "http://10.0.2.15:3000",
+    },
     "summary": {
-        "total_tests": 10,
-        "status": "Completed",
-        "scope": "T01 - T10 Vulnerability Verification"
+        "catalogue_cases": 10,
+        "displayed_http_observations": 10,
+        "confirmed_vulnerabilities": 0,
+        "unverified_cases": 10,
+        "status": "Baseline evidence review; vulnerability validation pending",
     },
     "test_results": [
-        {"id": "T01", "name": "SQL Injection (Login Bypass)", "category": "A03:2021-Injection"},
-        {"id": "T02", "name": "Cross-Site Scripting (XSS) in Search", "category": "A03:2021-Injection"},
-        {"id": "T03", "name": "Broken Object Level Authorization", "category": "A01:2021-Broken Access Control"},
-        {"id": "T04", "name": "Sensitive Data Exposure (Config File)", "category": "A05:2021-Security Misconfiguration"},
-        {"id": "T05", "name": "Forced Browsing (Admin Dashboard)", "category": "A01:2021-Broken Access Control"},
-        {"id": "T06", "name": "Security Misconfiguration (Swagger Docs)", "category": "A05:2021-Security Misconfiguration"},
-        {"id": "T07", "name": "Weak Authentication (Password Reset)", "category": "A07:2021-Identification & Auth Failures"},
-        {"id": "T08", "name": "Input Validation & Search Vector", "category": "A03:2021-Injection"},
-        {"id": "T09", "name": "Unvalidated Redirects", "category": "A01:2021-Broken Access Control"},
-        {"id": "T10", "name": "Mass Assignment / Privilege Escalation", "category": "A01:2021-Broken Access Control"}
-    ]
+        {
+            "id": test_id,
+            "name": name,
+            "observed_http_status": status,
+            "vulnerability_classification": "unverified",
+            "evidence": "docs/screenshots/06-security-checks.png",
+            "confirmation_requirements": f"docs/TEST_MATRIX.md#{test_id.lower()}",
+        }
+        for test_id, name, status in OBSERVATIONS
+    ],
 }
-
-with open("docs/report_summary.json", "w") as f:
-    json.dump(report, f, indent=4)
-
-print("[+] Report generated successfully at docs/report_summary.json")
+output = Path(__file__).resolve().parent / "docs" / "report_summary.json"
+output.parent.mkdir(parents=True, exist_ok=True)
+output.write_text(json.dumps(report, indent=2) + "\n", encoding="utf-8")
+print(f"Reviewed baseline exported to {output}")
+print("No new scan was run or ingested; all vulnerability cases remain unverified.")

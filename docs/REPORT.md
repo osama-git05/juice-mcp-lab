@@ -1,32 +1,95 @@
-# Penetration Testing Assessment Report: OWASP Juice Shop
-**Project:** Local-LLM Powered MCP Security Evaluation  
-**Target:** OWASP Juice Shop (`http://10.0.2.15:3000`)  
-**Runner Architecture:** Python FastAPI / Unsloth Qwen2.5-Coder-7B-Instruct via SSH Reverse Tunnel  
+# Technical assessment and evidence review
 
----
+## Executive summary
 
-## 1. Executive Summary
-This report summarizes the automated security assessment performed against an isolated instance of OWASP Juice Shop. Utilizing a local Large Language Model (`Qwen2.5-Coder-7B-Instruct`) hosted on Windows hardware and bridged via a secure SSH reverse tunnel to a Kali Linux testing environment, a Model Context Protocol (MCP) runner executed ten distinct vulnerability checks (T01–T10) mapping directly to the OWASP Top 10.
+The project demonstrates a Windows-hosted Unsloth Qwen model supplying a reconnaissance checklist to a Python client in Kali. A second script probes ten OWASP Juice Shop URLs and prints HTTP response codes. Existing screenshots show a running target, model selection, a successful checklist response and the probe output.
 
-## 2. Lab Topology & Architecture
-- **Host Infrastructure:** Windows 10/11 with RTX 2080 GPU running Unsloth Studio local LLM inference server on port `8888`.
-- **Guest Testing Environment:** Kali Linux Virtual Machine (VirtualBox NAT with SSH reverse port forwarding to `127.0.0.1:2222`).
-- **Target Application:** OWASP Juice Shop containerized deployment on Docker (`http://10.0.2.15:3000`).
+The reviewed source does not implement MCP, FastAPI, RAG, adaptive tool dispatch or exploit verification. The earlier report marked all ten cases Verified Vulnerable without supporting request/response evidence. This revision corrects those claims. **No confirmed vulnerability is established by the committed evidence.** That statement concerns the evidence, not the intentionally vulnerable application's actual security.
 
-## 3. Summary of Test Cases (T01 - T10)
+## Scope and provenance
 
-| ID | Vulnerability / Test Case | OWASP Category | Target Endpoint | Status / Finding |
-|----|---------------------------|----------------|-----------------|------------------|
-| **T01** | SQL Injection (Login Bypass) | A03:2021-Injection | `/rest/user/login` | Verified Vulnerable |
-| **T02** | Cross-Site Scripting (XSS) in Search | A03:2021-Injection | `/#/search?q=...` | Verified Vulnerable |
-| **T03** | Broken Object Level Authorization (BASKET) | A01:2021-Broken Access Control | `/rest/basket/1` | Verified Vulnerable |
-| **T04** | Sensitive Data Exposure (Config File) | A05:2021-Security Misconfiguration | `/ftp/package.json.bak` | Verified Vulnerable |
-| **T05** | Forced Browsing (Admin Dashboard) | A01:2021-Broken Access Control | `/#/administration` | Verified Vulnerable |
-| **T06** | Security Misconfiguration (Swagger Docs) | A05:2021-Security Misconfiguration | `/api-docs/` | Verified Vulnerable |
-| **T07** | Weak Authentication (Password Reset) | A07:2021-Identification Failures | `/rest/user/reset-password` | Verified Vulnerable |
-| **T08** | Input Validation & Search Vector | A03:2021-Injection | `/rest/products/search` | Verified Vulnerable |
-| **T09** | Unvalidated Redirects | A01:2021-Broken Access Control | `/redirect?to=...` | Verified Vulnerable |
-| **T10** | Mass Assignment / Privilege Escalation | A01:2021-Broken Access Control | `/api/Users` | Verified Vulnerable |
+| Field | Recorded value or limitation |
+|---|---|
+| Reviewed source revision | b892b45beb5e54215cec0eac2a2729e2a1552504 |
+| Review date | 7 November 2026 |
+| Target in runner screenshot | http://10.0.2.15:3000 |
+| Target in browser screenshot | http://127.0.0.1:3000 |
+| Model shown | Qwen2.5-Coder-7B-Instruct GGUF, Q5_K_M selection |
+| Local API in runner screenshot | http://127.0.0.1:8888/v1 |
+| Target image | See image-reference.txt for the committed digest |
+| Execution dates and durations | Not preserved as trustworthy machine-readable records |
+| Review method | Static source review and inspection of committed screenshots |
+| New live scans | None during this documentation review |
 
-## 4. Conclusion & Recommendations
-The automated MCP runner successfully verified all targeted vulnerability vectors without reliance on external cloud APIs, ensuring complete data privacy and local execution integrity. Remediation efforts should focus on input sanitization, strict object-level authorization checks, and proper administrative route guarding.
+## Implemented architecture
+
+![Actual architecture](architecture/current-architecture.png)
+
+runner.py uses Requests to contact the target, then asks the local model for a checklist. tests.py sends ten GET requests in a fixed loop. Its model-evaluation helper is unused. The original generate_report.py constructs a completion summary from a hardcoded catalogue instead of execution evidence. The revised exporter makes its baseline provenance explicit and marks all vulnerability conclusions unverified.
+
+## Evidence figures
+
+### Figure 1 Model selection
+
+![Unsloth model selection](screenshots/02-local-model.png)
+
+This shows the chosen model in Unsloth. It does not establish inference accuracy, effective memory use or all runtime settings.
+
+### Figure 2 Target application
+
+![Juice Shop application](screenshots/01-lab-scope.png)
+
+This shows Juice Shop reachable in a local browser. It does not prove a vulnerability.
+
+### Figure 3 Target and model response
+
+![Runner output with local checklist](screenshots/05-2-MCP-EXECUTION.png)
+
+The terminal shows target HTTP 200 and a generated reconnaissance checklist. Despite the script's MCP label, the source performs direct REST calls.
+
+### Figure 4 Endpoint probe observations
+
+![Ten endpoint probe status results](screenshots/06-security-checks.png)
+
+These are the observations evaluated in the test matrix. Status codes alone cannot confirm the named vulnerability classes.
+
+## Results
+
+| Category | Result |
+|---|---|
+| Target connectivity | Demonstrated in screenshot |
+| Local model guidance | Demonstrated in screenshot |
+| Endpoint probes | Ten displayed status observations |
+| Confirmed vulnerabilities | Zero established from available evidence |
+| Vulnerability cases awaiting validation | Ten |
+| Adaptive model execution | Not implemented |
+| MCP protocol exchange | Not implemented |
+| Remediation and retest | No evidence committed |
+
+See [TEST_MATRIX.md](TEST_MATRIX.md) for the status and confirmation threshold of every ID.
+
+## Technical findings about the assessment process
+
+### F01 Unsupported vulnerability conclusions
+
+The original report assigned a positive finding to every catalogue entry. Neither script saves evidence capable of supporting those conclusions. Replace categorical claims with the observed request and outcome, and promote a case only after its confirmation threshold is met.
+
+### F02 Client routes and HTTP methods are mismatched
+
+Fragment routes such as /#/administration are not sent to the server. GET probes to login and reset workflows do not exercise their intended state-changing methods. Validate browser behaviour and use the correct API method only within the authorised lab.
+
+### F03 Model planning is not connected to execution
+
+The model checklist is printed to the terminal. No source connects its response to tool dispatch. Demonstrate a bounded MCP invocation and subsequent action-selection trace before describing autonomous pentesting.
+
+### F04 Published credential exposure
+
+The reviewed tree contained a key in .env and a screenshot. Both are removed in this documentation patch. Revoke the old key, replace it privately and address history with the owner. See [SECURITY.md](../SECURITY.md).
+
+## Recommendations and next milestone
+
+Preserve the working local-inference setup. Add one scoped MCP tool and save an actual protocol and execution record. Record full request/response evidence for each lab case, add browser and identity controls where needed, then let the model draft entries that a reviewer checks. Use an evidence-driven exporter so generating a file cannot silently assert testing completion.
+
+## Verification of this documentation change
+
+The documentation review validates internal links, source syntax, generated JSON, screenshot references and consistency between implemented capabilities and written claims. It does not rerun the target or model. Actual runtime behaviour remains to be measured in the lab.

@@ -1,0 +1,13 @@
+digraph G {
+ graph [rankdir=TB,bgcolor="white",pad="0.2",ranksep="0.35"];
+ node [shape=box,style="rounded,filled",fillcolor="#F1F5F8",color="#59788C",fontname="DejaVu Sans",fontsize=13,margin="0.17,0.12"];
+ edge [fontname="DejaVu Sans",fontsize=10,color="#456A80"];
+ model [label="Planned local-model proposal"];
+ policy [label="Validate fixed target and action"];
+ review [label="Operator approval when required"];
+ mcp [label="MCP tool call"];
+ target [label="Authorised Juice Shop"];
+ evidence [label="Capture request, response and time"];
+ report [label="Reviewed evidence-linked finding"];
+ model -> policy -> review -> mcp -> target -> evidence -> report;
+}
